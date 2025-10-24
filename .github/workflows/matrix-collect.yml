@@ -1,0 +1,31 @@
+name: Matrix Output Example
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  matrix_job:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        number: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+    outputs:
+      foo_output: ${{ steps.set_output.outputs.foo }}
+    steps:
+      - name: Print and set output
+        id: set_output
+        run: |
+          echo "{\"foo\": ${{ matrix.number }}}"
+          echo "foo={\"foo\": ${{ matrix.number }}}" >> $GITHUB_OUTPUT
+
+  collect_job:
+    needs: matrix_job
+    runs-on: ubuntu-latest
+    steps:
+      - name: Aggregate outputs and print to summary
+        run: |
+          # Collect outputs into an array
+          outputs=$(echo '${{ toJson(needs.matrix_job.outputs.foo_output) }}' | jq -c '.')
+          echo "## Aggregated Outputs" >> $GITHUB_STEP_SUMMARY
+          echo "$outputs" >> $GITHUB_STEP_SUMMARY
